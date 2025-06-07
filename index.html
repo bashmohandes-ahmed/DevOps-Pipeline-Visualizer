@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DevOps Pipeline Visualizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive DevOps CI/CD Pipeline Visualizer - Open Source">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f5f8fd;
+      margin:0;
+      min-height:100vh;
+      color: #232332;
+    }
+    header {
+      text-align: center;
+      padding: 40px 0 20px 0;
+    }
+    .logo {
+      width: 48px;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #009FFD;
+      margin: 8px 0 10px 0;
+    }
+    .desc {
+      color:#555;
+      font-size:1.12rem;
+      margin-bottom: 8px;
+    }
+    .pipeline-container {
+      display:flex;
+      gap:24px;
+      justify-content:center;
+      flex-wrap: wrap;
+      margin: 38px 0;
+    }
+    .stage-block {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 3px 18px #009FFD22;
+      padding: 18px 24px 16px 24px;
+      min-width: 180px;
+      max-width: 240px;
+      text-align: left;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .stage-title {
+      font-weight: 700;
+      color: #009FFD;
+      font-size: 1.1rem;
+    }
+    .stage-controls button {
+      background: #eaf4ff;
+      border: none;
+      border-radius: 4px;
+      margin: 0 2px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #2A2A72;
+      font-size: 1em;
+      padding: 0 8px;
+    }
+    .stage-controls button:hover {
+      background: #009FFD;
+      color: #fff;
+    }
+    .stage-block ul {
+      padding-left: 20px;
+      margin: 0 0 12px 0;
+      min-height: 24px;
+    }
+    .stage-actions {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .add-stage-btn, .export-btn {
+      padding: 10px 24px;
+      background: #009FFD;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 12px #009FFD22;
+      margin: 0 8px 0 0;
+      transition: background 0.2s;
+    }
+    .add-stage-btn:hover, .export-btn:hover {
+      background: #FFA400;
+      color: #2A2A72;
+    }
+    .remove-stage-btn {
+      background: #ffb3b3;
+      color: #b80000;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 4px 14px;
+      margin-top: 8px;
+      cursor: pointer;
+      transition: background 0.16s;
+      float: right;
+    }
+    .remove-stage-btn:hover {
+      background: #de2d2d;
+      color: #fff;
+    }
+    .add-step-form {
+      margin-top: 6px;
+      display: flex;
+      gap: 3px;
+    }
+    .add-step-form input {
+      flex:2 1 60px;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #bbb;
+      font-size: 1em;
+    }
+    .add-step-form button {
+      flex:1 0 38px;
+      background: #009FFD;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 0.98em;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .add-step-form button:hover {
+      background: #2A2A72;
+    }
+    .export-modal-bg {
+      position: fixed; left:0; top:0; right:0; bottom:0;
+      background: rgba(40,60,120,0.22);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .export-modal {
+      background: #fff;
+      border-radius: 14px;
+      padding: 32px 24px;
+      min-width: 320px;
+      max-width: 480px;
+      box-shadow: 0 4px 30px #2A2A7230;
+      text-align: center;
+    }
+    .export-modal textarea {
+      width: 96%;
+      min-height: 140px;
+      margin: 14px 0 14px 0;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1.5px solid #d7e0fb;
+      font-family: monospace;
+      font-size: 1rem;
+      color: #222;
+    }
+    .export-modal .close-btn {
+      padding: 7px 30px;
+      margin-top: 7px;
+      background: #eaf4ff;
+      border:none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #009FFD;
+      transition: background 0.18s, color 0.18s;
+    }
+    .export-modal .close-btn:hover {
+      background: #009FFD;
+      color: #fff;
+    }
+    footer {
+      text-align: center;
+      color: #666;
+      margin: 34px 0 10px 0;
+      font-size: 1rem;
+    }
+    @media (max-width: 700px) {
+      .pipeline-container {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/github/explore/master/topics/devops/devops.png" alt="logo" class="logo" />
+    <h1>DevOps Pipeline Visualizer</h1>
+    <div class="desc">Design and export your CI/CD pipelines visually!</div>
+  </header>
+
+  <div class="pipeline-container" id="pipeline"></div>
+  <div class="stage-actions">
+    <button class="add-stage-btn" onclick="addStage()">+ Add Stage</button>
+    <button class="export-btn" onclick="showExport()">Export Pipeline YAML</button>
+  </div>
+
+  <div id="exportModal" style="display:none"></div>
+  <footer>
+    MIT &copy; 2025 | <a href="https://github.com/yourusername/devops-pipeline-visualizer">GitHub</a>
+  </footer>
+
+  <script>
+    // Pipeline Data
+    let pipeline = [
+      { name: "Build", steps: ["npm install", "npm run build"] },
+      { name: "Test", steps: ["npm test"] },
+      { name: "Deploy", steps: ["docker build", "docker push"] }
+    ];
+
+    function renderPipeline() {
+      const container = document.getElementById("pipeline");
+      container.innerHTML = "";
+      pipeline.forEach((stage, idx) => {
+        const stageDiv = document.createElement("div");
+        stageDiv.className = "stage-block";
+
+        // Stage Header
+        let header = document.createElement("div");
+        header.className = "stage-header";
+        let title = document.createElement("span");
+        title.className = "stage-title";
+        title.textContent = stage.name;
+        // Move controls
+        let controls = document.createElement("span");
+        controls.className = "stage-controls";
+        if (idx > 0) {
+          let up = document.createElement("button");
+          up.title = "Move Up";
+          up.textContent = "↑";
+          up.onclick = () => {moveStage(idx, idx-1)};
+          controls.appendChild(up);
+        }
+        if (idx < pipeline.length-1) {
+          let down = document.createElement("button");
+          down.title = "Move Down";
+          down.textContent = "↓";
+          down.onclick = () => {moveStage(idx, idx+1)};
+          controls.appendChild(down);
+        }
+        header.appendChild(title);
+        header.appendChild(controls);
+
+        // Steps List
+        let stepList = document.createElement("ul");
+        stage.steps.forEach((step, sidx) => {
+          let li = document.createElement("li");
+          li.textContent = step;
+          // Remove step btn
+          let del = document.createElement("button");
+          del.textContent = "✕";
+          del.title = "Delete Step";
+          del.style.marginLeft = "8px";
+          del.style.background = "#ffe0e0";
+          del.style.color = "#b80000";
+          del.style.border = "none";
+          del.style.borderRadius = "4px";
+          del.style.cursor = "pointer";
+          del.onclick = () => { removeStep(idx, sidx); };
+          li.appendChild(del);
+          stepList.appendChild(li);
+        });
+
+        // Add Step Form
+        let addForm = document.createElement("form");
+        addForm.className = "add-step-form";
+        addForm.onsubmit = function(e) {
+          e.preventDefault();
+          let val = this.elements["step"].value.trim();
+          if(val) {
+            pipeline[idx].steps.push(val);
+            renderPipeline();
+            this.reset();
+          }
+        };
+        let input = document.createElement("input");
+        input.type = "text"; input.name = "step";
+        input.placeholder = "Add step...";
+        let btn = document.createElement("button");
+        btn.type = "submit"; btn.textContent = "+";
+        addForm.appendChild(input); addForm.appendChild(btn);
+
+        // Remove Stage Button
+        let removeBtn = document.createElement("button");
+        removeBtn.className = "remove-stage-btn";
+        removeBtn.textContent = "Remove Stage";
+        removeBtn.onclick = (e) => {
+          e.preventDefault();
+          removeStage(idx);
+        };
+
+        // Assemble stage block
+        stageDiv.appendChild(header);
+        stageDiv.appendChild(stepList);
+        stageDiv.appendChild(addForm);
+        stageDiv.appendChild(removeBtn);
+
+        container.appendChild(stageDiv);
+      });
+    }
+
+    function moveStage(from, to) {
+      if(to<0 || to>=pipeline.length) return;
+      const [el] = pipeline.splice(from, 1);
+      pipeline.splice(to, 0, el);
+      renderPipeline();
+    }
+    function addStage() {
+      const name = prompt("Stage name?");
+      if(name && name.trim()) {
+        pipeline.push({name: name.trim(), steps: []});
+        renderPipeline();
+      }
+    }
+    function removeStage(idx) {
+      if(confirm("Remove stage?")) {
+        pipeline.splice(idx, 1);
+        renderPipeline();
+      }
+    }
+    function removeStep(stageIdx, stepIdx) {
+      pipeline[stageIdx].steps.splice(stepIdx, 1);
+      renderPipeline();
+    }
+
+    // Export as YAML
+    function showExport() {
+      let yaml = "";
+      pipeline.forEach(stage=>{
+        yaml += `${stage.name}:\n  steps:\n`;
+        stage.steps.forEach(s=>yaml += `    - ${s}\n`);
+        yaml += "\n";
+      });
+      // modal
+      let modal = document.getElementById("exportModal");
+      modal.innerHTML = `
+        <div class="export-modal-bg" onclick="hideExport(event)">
+          <div class="export-modal" onclick="event.stopPropagation()">
+            <h2>Pipeline YAML</h2>
+            <textarea readonly rows="12">${yaml.trim()}</textarea><br>
+            <button class="close-btn" onclick="hideExport()">Close</button>
+          </div>
+        </div>
+      `;
+      modal.style.display = "block";
+    }
+    function hideExport(e) {
+      if(e && e.target!==e.currentTarget) return;
+      document.getElementById("exportModal").style.display = "none";
+    }
+
+    // Render on load
+    renderPipeline();
+  </script>
+</body>
+</html>
